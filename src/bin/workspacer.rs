@@ -52,7 +52,7 @@ fn workspaces_widget(workspace_count: i32, starting_workspace: i32) -> Result<()
         eventbox_w
     }).collect();
 
-    println!("(box :class \"workspaces\" :orientation \"h\" :space-evenly false :spacing 10 :halign \"start\" {})", eventboxes.join(" "));
+    println!("(box :class \"workspaces\" :orientation \"h\" :space-evenly false :spacing {{ws-spacing}} :halign \"start\" {})", eventboxes.join(" "));
     Ok(())
 }
 
