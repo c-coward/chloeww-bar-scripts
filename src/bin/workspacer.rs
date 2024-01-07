@@ -44,7 +44,7 @@ fn workspaces_widget(workspace_count: i32, starting_workspace: i32) -> Result<()
     let active_workspace = data::Workspace::get_active()?.id;
 
     let eventboxes: Vec<String> = (1..=workspace_count).map(|i| {
-        let img = if i == active_workspace {"active"} else if open_workspaces.contains(&(i + starting_workspace - 1)) {"open"} else {"empty"};
+        let img = if (i + starting_workspace - 1) == active_workspace {"active"} else if open_workspaces.contains(&(i + starting_workspace - 1)) {"open"} else {"empty"};
         let cmd = format!("hyprsome workspace {}", i);
         let image_w = format!("(image :image-height {{height}} :path \"./icons/{}.svg\")", img);
         let eventbox_w = format!("(eventbox :class \"ws-button\" :onclick \"{}\" {})", cmd, image_w);
