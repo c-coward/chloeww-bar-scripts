@@ -43,8 +43,8 @@ fn workspaces_widget(workspace_count: i32, starting_workspace: i32) -> Result<()
     let open_workspaces: Vec<_> = data::Workspaces::get()?.map(|w| w.id).collect();
     let active_workspace = data::Workspace::get_active()?.id;
 
-    let eventboxes: Vec<String> = (starting_workspace..(workspace_count + starting_workspace)).map(|i| {
-        let img = if i == active_workspace {"active"} else if open_workspaces.contains(&i) {"open"} else {"empty"};
+    let eventboxes: Vec<String> = (1..=workspace_count).map(|i| {
+        let img = if i == active_workspace {"active"} else if open_workspaces.contains(&(i + starting_workspace - 1)) {"open"} else {"empty"};
         let cmd = format!("hyprsome workspace {}", i);
         let image_w = format!("(image :image-height {{height}} :path \"./icons/{}.svg\")", img);
         let eventbox_w = format!("(eventbox :class \"ws-button\" :onclick \"{}\" {})", cmd, image_w);
@@ -55,3 +55,7 @@ fn workspaces_widget(workspace_count: i32, starting_workspace: i32) -> Result<()
     println!("(box :class \"workspaces\" :orientation \"h\" :space-evenly false :spacing 10 :halign \"start\" {})", eventboxes.join(" "));
     Ok(())
 }
+
+// fn get_workspace_windows(workspace_id: i32) -> Result<String> {
+//     data::Workspaces::get()
+// }
