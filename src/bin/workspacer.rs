@@ -8,7 +8,7 @@ use clap::Parser;
 fn main() -> Result<()> {
     let args = Args::parse();
     let mut listener = EventListener::new();
-    let hndlr = move || handle(workspaces_widget(args.workspaces.clamp(1, 10), args.starting_workspace));
+    let hndlr = move || handle(workspaces_widget(args.workspaces.clamp(1, 9), args.starting_workspace));
     listener.add_active_monitor_change_handler(move |_| hndlr());
     listener.add_window_moved_handler(move |_| hndlr());
     listener.add_window_close_handler(move |_| hndlr());
@@ -23,7 +23,7 @@ fn main() -> Result<()> {
 
 #[derive(Parser)]
 struct Args {
-    /// Number of workspaces to include, clamped to [1,10]
+    /// Number of workspaces to include, clamped to [1,9]
     #[arg(short, long, default_value_t=5)]
     workspaces: i32,
 
