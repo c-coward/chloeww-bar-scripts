@@ -44,10 +44,12 @@ fn workspaces_widget(workspace_count: i32, starting_workspace: i32) -> Result<()
     let active_workspace = data::Workspace::get_active()?.id;
 
     let eventboxes: Vec<String> = (1..=workspace_count).map(|i| {
-        let img = if (i + starting_workspace - 1) == active_workspace {"active"} else if open_workspaces.contains(&(i + starting_workspace - 1)) {"open"} else {"empty"};
+        let ws = i + starting_workspace - 1;
+        let img = if ws == active_workspace {"active"} else if open_workspaces.contains(&ws) {"open"} else {"empty"};
         let cmd = format!("hyprsome workspace {}", i);
+        let hov = get_workspace_windows(ws).join("\r");
         let image_w = format!("(image :image-height {{height}} :path \"./icons/{}.svg\")", img);
-        let eventbox_w = format!("(eventbox :class \"ws-button\" :onclick \"{}\" {})", cmd, image_w);
+        let eventbox_w = format!("(eventbox :class \"ws-button\" :tooltip `{}` :onclick \"{}\" {})", hov, cmd, image_w);
         
         eventbox_w
     }).collect();
@@ -56,6 +58,12 @@ fn workspaces_widget(workspace_count: i32, starting_workspace: i32) -> Result<()
     Ok(())
 }
 
-// fn get_workspace_windows(workspace_id: i32) -> Result<String> {
-//     data::Workspaces::get()
-// }
+fn get_workspace_windows(workspace_id: i32) -> Vec<String> {
+    let mut clients: Vec<_> = data::Clients::get()
+        .expect("Couldn't find clients")
+        .filter(|c| c.workspace.id == workspace_id)
+        .filter(|c| c.title != "")
+        .collect();
+    clients.sort_by(|a, b| if a.at.1 == b.at.1 {a.at.0.cmp(&b.at.0)} else {a.at.1.cmp(&b.at.1)});
+    clients.iter().enumerate().map(|(i, c)| format!("{}: {}", i + 1, c.title)).collect()
+}
