@@ -3,17 +3,9 @@ use hyprland::event_listener::EventListener;
 use hyprland::prelude::*;
 use hyprland::Result;
 
-use clap::Parser;
-
 fn main() -> Result<()> {
-    let args = Args::parse();
     let mut listener = EventListener::new();
-    let hndlr = move || {
-        handle(workspaces_widget(
-            args.workspaces.clamp(1, 9),
-            args.starting_workspace,
-        ))
-    };
+    let hndlr = move || panic_on_err(workspaces_widget());
     listener.add_active_monitor_change_handler(move |_| hndlr());
     listener.add_window_moved_handler(move |_| hndlr());
     listener.add_window_close_handler(move |_| hndlr());
@@ -27,71 +19,43 @@ fn main() -> Result<()> {
     listener.start_listener()
 }
 
-#[derive(Parser)]
-struct Args {
-    /// Number of workspaces to include, clamped to [1,9]
-    #[arg(short, long, default_value_t = 5)]
-    workspaces: i32,
-
-    /// Workspace to start counting from. Useful for multi-monitor setups
-    #[arg(short, long, default_value_t = 1)]
-    starting_workspace: i32,
-}
-
-fn handle(result: Result<()>) {
+fn panic_on_err<T>(result: Result<T>) -> T {
     match result {
-        Ok(_) => (),
-        Err(e) => panic!("{:#?}", e),
+        Ok(x) => x,
+        Err(e) => panic!("{e:#?}"),
     }
 }
 
-fn workspaces_widget(workspace_count: i32, starting_workspace: i32) -> Result<()> {
+fn workspaces_widget() -> Result<()> {
     let open_workspaces: Vec<_> = data::Workspaces::get()?.map(|w| w.id).collect();
     let active_workspace = data::Workspace::get_active()?.id;
 
-    let eventboxes: Vec<String> = (1..=workspace_count)
-        .map(|i| {
-            let ws = i + starting_workspace - 1;
-            let img = if ws == active_workspace {
-                "active"
-            } else if open_workspaces.contains(&ws) {
-                "open"
-            } else {
-                "empty"
-            };
-            let cmd = format!("hyprsome workspace {}", i);
-            let hov = get_workspace_windows(ws).join("\r");
-            let image_w = format!("(image :image-height height :path \"./icons/{}.svg\")", img);
-            let eventbox_w = format!(
-                "(eventbox :class \"ws-button\" :tooltip `{}` :onclick \"{}\" {})",
-                hov, cmd, image_w
-            );
-
-            eventbox_w
-        })
+    let first_half: Vec<String> = (1..=5)
+        .map(|i| make_ws_button(i, &open_workspaces, active_workspace))
         .collect();
+    let second_half: Vec<String> = (6..=10)
+        .map(|i| make_ws_button(i, &open_workspaces, active_workspace))
+        .collect();
+    let middle = "(box :class \"ws-sep\")".to_string();
+    let buttons = [&first_half[..], &[middle], &second_half[..]].concat();
 
-    println!("(box :class \"workspaces\" :orientation \"h\" :space-evenly false :spacing {{ws-spacing}} :halign \"start\" {})", eventboxes.join(" "));
+    println!("(box :class \"workspaces\" :orientation \"h\" :space-evenly false :spacing ws-spacing :halign \"start\" {})", buttons.join(" "));
     Ok(())
 }
 
-fn get_workspace_windows(workspace_id: i32) -> Vec<String> {
-    let mut clients: Vec<_> = data::Clients::get()
-        .expect("Couldn't find clients")
-        .filter(|c| c.workspace.id == workspace_id)
-        .filter(|c| c.title.is_empty())
-        .collect();
-    clients.sort_by(|a, b| {
-        if a.at.1 == b.at.1 {
-            a.at.0.cmp(&b.at.0)
-        } else {
-            a.at.1.cmp(&b.at.1)
-        }
-    });
-    clients
-        .iter()
-        .enumerate()
-        .map(|(i, c)| format!("{}: {}", i + 1, c.class))
-        .collect()
+fn make_ws_button(workspace_id: i32, open_workspaces: &[i32], active_workspace: i32) -> String {
+    let class = if active_workspace == workspace_id {
+        "active"
+    } else if open_workspaces.contains(&workspace_id) {
+        "full"
+    } else {
+        "inactive"
+    };
+    let cmd = format!("hyprctl dispatch workspace {workspace_id}");
+    // let ws_string = if workspace_id == 10 {
+    //     "X".to_string()
+    // } else {
+    //     workspace_id.to_string()
+    // };
+    format!("(button :class \"ws-button ws-{class}\" :onclick \"{cmd}\" \"{workspace_id}\")")
 }
-

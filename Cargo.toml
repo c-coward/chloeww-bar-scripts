@@ -8,3 +8,10 @@ edition = "2021"
 [dependencies]
 clap = { version = "4.4.13", features = ["derive"] }
 hyprland = "0.3.12"
+mpris = "2.0.1"
+
+[lints.clippy]
+pedantic = "warn"
+nursery = "warn"
+unwrap_used = "warn"
+expect_used = "warn"
